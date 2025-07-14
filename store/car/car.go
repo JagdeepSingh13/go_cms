@@ -3,8 +3,11 @@ package car
 import (
 	"context"
 	"database/sql"
+	"errors"
+	"time"
 
 	"github.com/JagdeepSingh13/go_cms/models"
+	"github.com/google/uuid"
 )
 
 type Store struct {
@@ -110,7 +113,74 @@ func (s Store) GetCarByBrand(ctx context.Context, brand string, isEngine bool) (
 }
 
 func (s Store) CreateCar(ctx context.Context, carReq models.CarRequest) (models.Car, error) {
+	var createdCar models.Car
+	var engineID uuid.UUID
 
+	err := s.db.QueryRowContext(ctx, `SELECT id FROM engine id=$1`, carReq.Engine.EngineID).Scan(&engineID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return createdCar, errors.New("engine_id does not exist in engine table")
+		}
+		return createdCar, err
+	}
+
+	carID := uuid.New()
+	createdAt := time.Now()
+	updatedAt := createdAt
+
+	newCar := models.Car{
+		ID:        carID,
+		Name:      carReq.Name,
+		Year:      carReq.Year,
+		Brand:     carReq.Brand,
+		FuelType:  carReq.FuelType,
+		Engine:    carReq.Engine,
+		Price:     carReq.Price,
+		CreatedAt: createdAt,
+		UpdatedAt: updatedAt,
+	}
+
+	// begin the transaction
+	// nothing is inserted in any table if any error
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return createdCar, err
+	}
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+			return
+		}
+		err = tx.Commit()
+	}()
+
+	query := `INSERT INTO car (id, name, year, brand, fuel_type, engine_id, price, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id, name, year, brand, fuel_type, engine_id, price, created_at, updated_at`
+
+	err = tx.QueryRowContext(ctx, query,
+		newCar.ID,
+		newCar.Name,
+		newCar.Year,
+		newCar.Brand,
+		newCar.FuelType,
+		newCar.Engine.EngineID,
+		newCar.Price,
+		newCar.CreatedAt,
+		newCar.UpdatedAt,
+	).Scan(
+		&createdCar.ID,
+		&createdCar.Name,
+		&createdCar.Year,
+		&createdCar.Brand,
+		&createdCar.FuelType,
+		&createdCar.Engine.EngineID,
+		&createdCar.Price,
+		&createdCar.CreatedAt,
+		&createdCar.UpdatedAt,
+	)
+	if err != nil {
+		return createdCar, err
+	}
+	return createdCar, nil
 }
 
 func (s Store) UpdateCar(ctx context.Context, id string, carReq models.CarRequest) (models.Car, error) {
