@@ -9,8 +9,8 @@ import (
 type Engine struct {
 	EngineID      uuid.UUID `json:"engine_id"`
 	Displacement  int64     `json:"displacement"`
-	NoOfCylenders int64     `json:"noOfCylinders"`
-	CarRange      int64     `json:"carRange"`
+	NoOfCylenders int64     `json:"no_of_cylinders"`
+	CarRange      int64     `json:"car_ange"`
 }
 
 type EngineRequest struct {
