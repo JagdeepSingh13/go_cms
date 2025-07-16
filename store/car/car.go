@@ -112,7 +112,7 @@ func (s Store) GetCarByBrand(ctx context.Context, brand string, isEngine bool) (
 	return cars, nil
 }
 
-func (s Store) CreateCar(ctx context.Context, carReq models.CarRequest) (models.Car, error) {
+func (s Store) CreateCar(ctx context.Context, carReq *models.CarRequest) (models.Car, error) {
 	var createdCar models.Car
 	var engineID uuid.UUID
 
@@ -183,7 +183,7 @@ func (s Store) CreateCar(ctx context.Context, carReq models.CarRequest) (models.
 	return createdCar, nil
 }
 
-func (s Store) UpdateCar(ctx context.Context, id string, carReq models.CarRequest) (models.Car, error) {
+func (s Store) UpdateCar(ctx context.Context, id string, carReq *models.CarRequest) (models.Car, error) {
 	var updatedCar models.Car
 
 	tx, err := s.db.BeginTx(ctx, nil)
